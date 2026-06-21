@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Card Optimizer</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0D1117;
+    --surface: #161B22;
+    --surface2: #1C2333;
+    --border: #30363D;
+    --text: #E6EDF3;
+    --muted: #8B949E;
+    --chase: #58A6FF;
+    --win: #00D26A;
+    --amber: #F0A500;
+    --prime: #FF9900;
+    --danger: #F85149;
+    --radius: 12px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding: 0 0 60px;
+  }
+
+  header {
+    background: linear-gradient(180deg, #0D1117 0%, rgba(13,17,23,0) 100%);
+    padding: 32px 24px 0;
+    text-align: center;
+    position: relative;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%; transform: translateX(-50%);
+    width: 600px; height: 200px;
+    background: radial-gradient(ellipse at 50% 0%, rgba(88,166,255,.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--chase);
+    margin-bottom: 12px;
+    opacity: .8;
+  }
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 700;
+    letter-spacing: -.02em;
+    line-height: 1.1;
+    margin-bottom: 8px;
+  }
+  h1 span { color: var(--win); }
+  .subtitle {
+    color: var(--muted);
+    font-size: 15px;
+    margin-bottom: 36px;
+  }
+
+  .search-section {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .search-wrap {
+    position: relative;
+    margin-bottom: 16px;
+  }
+  .search-icon {
+    position: absolute;
+    left: 16px; top: 50%; transform: translateY(-50%);
+    color: var(--muted);
+    pointer-events: none;
+  }
+  #merchant-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 18px;
+    font-weight: 500;
+    padding: 16px 16px 16px 48px;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  #merchant-input::placeholder { color: var(--muted); font-weight: 400; }
+  #merchant-input:focus {
+    border-color: var(--chase);
+    box-shadow: 0 0 0 3px rgba(88,166,255,.12);
+  }
+
+  #suggestions {
+    position: absolute;
+    top: calc(100% + 6px); left: 0; right: 0;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    z-index: 100;
+    display: none;
+    box-shadow: 0 16px 40px rgba(0,0,0,.5);
+  }
+  #suggestions.open { display: block; }
+  .sug-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 16px;
+    cursor: pointer;
+    transition: background .12s;
+    font-size: 14px;
+  }
+  .sug-item:hover, .sug-item.active { background: rgba(88,166,255,.1); }
+  .sug-icon { font-size: 18px; width: 24px; text-align: center; flex-shrink: 0; }
+  .sug-name { font-weight: 500; color: var(--text); }
+  .sug-cat { color: var(--muted); font-size: 12px; margin-left: auto; }
+
+  .pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 32px;
+  }
+  .pill {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .pill:hover { border-color: var(--chase); color: var(--chase); }
+  .pill.active {
+    background: rgba(88,166,255,.15);
+    border-color: var(--chase);
+    color: var(--chase);
+  }
+
+  .main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .winner-section {
+    margin-bottom: 28px;
+    display: none;
+  }
+  .winner-section.visible { display: block; }
+
+  .winner-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--win);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .winner-label::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    background: var(--win);
+    border-radius: 50%;
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .5; transform: scale(1.4); }
+  }
+
+  .winner-card {
+    background: var(--surface);
+    border: 1.5px solid var(--win);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 0 32px rgba(0,210,106,.1), inset 0 1px 0 rgba(255,255,255,.04);
+    position: relative;
+    overflow: hidden;
+  }
+  .winner-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0,210,106,.6), transparent);
+  }
+  .winner-emoji { font-size: 36px; line-height: 1; }
+  .winner-info { flex: 1; min-width: 0; }
+  .winner-card-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+  .winner-card-detail { color: var(--muted); font-size: 13px; }
+  .winner-rate {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--win);
+    white-space: nowrap;
+  }
+  .winner-rate span { font-size: 14px; font-weight: 500; color: var(--muted); display: block; text-align: right; }
+
+  .amount-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .amount-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .amount-prefix {
+    position: absolute;
+    left: 14px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  #amount-input {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    padding: 13px 16px 13px 32px;
+    width: 180px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  #amount-input:focus { border-color: var(--chase); }
+  .amount-label { color: var(--muted); font-size: 14px; }
+
+  .ranked-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 40px; }
+
+  .rank-row {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    display: grid;
+    grid-template-columns: 28px 1fr auto auto;
+    align-items: center;
+    gap: 14px;
+    transition: border-color .2s, transform .15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .rank-row.top {
+    border-color: var(--win);
+    box-shadow: 0 0 18px rgba(0,210,106,.08);
+  }
+  .rank-row.top::after {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--win);
+    border-radius: 2px 0 0 2px;
+  }
+
+  .rank-num {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+    text-align: center;
+  }
+  .rank-row.top .rank-num { color: var(--win); }
+
+  .rank-info { min-width: 0; }
+  .rank-name {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .bar-wrap {
+    height: 4px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+    width: 100%;
+    max-width: 220px;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: var(--muted);
+    transition: width .5s cubic-bezier(.4,0,.2,1);
+  }
+  .rank-row.top .bar-fill { background: var(--win); }
+
+  .rank-mult {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--muted);
+    white-space: nowrap;
+    text-align: right;
+  }
+  .rank-row.top .rank-mult { color: var(--win); }
+
+  .rank-earn {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--muted);
+    white-space: nowrap;
+    text-align: right;
+    min-width: 80px;
+  }
+  .rank-row.top .rank-earn { color: var(--text); }
+
+  .section-head {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  .portfolio-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+  }
+
+  .port-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    transition: border-color .2s, transform .2s, box-shadow .2s;
+    cursor: default;
+    position: relative;
+    overflow: hidden;
+  }
+  .port-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    opacity: 0;
+    transition: opacity .2s;
+  }
+  .port-card.chase::before { background: linear-gradient(90deg, #58A6FF, #1F6FEB); }
+  .port-card.prime::before { background: linear-gradient(90deg, #FF9900, #F0A500); }
+  .port-card.winner {
+    border-color: var(--win);
+    box-shadow: 0 0 24px rgba(0,210,106,.12);
+  }
+  .port-card.winner::before { opacity: 1; background: linear-gradient(90deg, var(--win), #00FF88) !important; }
+
+  .port-issuer {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .port-card.chase .port-issuer { color: var(--chase); }
+  .port-card.prime .port-issuer { color: var(--prime); }
+  .port-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 14px;
+  }
+  .port-perks { display: flex; flex-direction: column; gap: 4px; }
+  .port-perk {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .port-perk strong { color: var(--text); font-weight: 600; }
+  .best-badge {
+    position: absolute;
+    top: 10px; right: 10px;
+    background: var(--win);
+    color: #000;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 99px;
+    display: none;
+  }
+  .port-card.winner .best-badge { display: block; }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--muted);
+  }
+  .empty-state .big { font-size: 40px; margin-bottom: 12px; }
+  .empty-state p { font-size: 15px; }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  @media (max-width: 600px) {
+    .rank-row { grid-template-columns: 24px 1fr auto; }
+    .rank-earn { display: none; }
+    .portfolio-grid { grid-template-columns: 1fr 1fr; }
+    .winner-rate { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Card Optimizer</div>
+  <h1>Find your <span>best card</span></h1>
+  <p class="subtitle">Search any merchant or category — see exactly which card wins</p>
+</header>
+
+<div class="search-section">
+  <div class="search-wrap">
+    <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+    </svg>
+    <input type="text" id="merchant-input" placeholder="Search merchant — Amazon, Chipotle, Shell…" autocomplete="off" spellcheck="false">
+    <div id="suggestions"></div>
+  </div>
+
+  <div class="pills">
+    <div class="pill" data-cat="dining">🍽 Dining</div>
+    <div class="pill" data-cat="travel">✈️ Travel</div>
+    <div class="pill" data-cat="groceries">🛒 Groceries</div>
+    <div class="pill" data-cat="amazon">📦 Amazon</div>
+    <div class="pill" data-cat="gas">⛽ Gas</div>
+    <div class="pill" data-cat="streaming">📺 Streaming</div>
+    <div class="pill" data-cat="drugstore">💊 Drugstore</div>
+    <div class="pill" data-cat="general">💳 General</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="winner-section" id="winner-section">
+    <div class="winner-label" id="winner-label">Best card for —</div>
+    <div class="winner-card">
+      <div class="winner-emoji" id="winner-emoji">💳</div>
+      <div class="winner-info">
+        <div class="winner-card-name" id="winner-name">—</div>
+        <div class="winner-card-detail" id="winner-detail">—</div>
+      </div>
+      <div class="winner-rate">
+        <div id="winner-rate-val">—</div>
+        <span id="winner-rate-type">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="results-section" style="display:none">
+    <div class="amount-row">
+      <div class="amount-wrap">
+        <span class="amount-prefix">$</span>
+        <input type="number" id="amount-input" value="100" min="0" step="1">
+      </div>
+      <div class="amount-label">purchase amount</div>
+    </div>
+    <div class="ranked-list" id="ranked-list"></div>
+  </div>
+
+  <div class="empty-state" id="empty-state">
+    <div class="big">🔍</div>
+    <p>Type a merchant name or pick a category above</p>
+  </div>
+
+  <div class="section-head" style="margin-top:40px">Your cards</div>
+  <div class="portfolio-grid" id="portfolio-grid"></div>
+
+</div>
+
+<script>
+const CARDS = [
+  {
+    id: 'csp',
+    name: 'Chase Sapphire Preferred',
+    shortName: 'Sapphire Preferred',
+    issuer: 'Chase',
+    type: 'points',
+    emoji: '💎',
+    cssClass: 'chase',
+    rewards: { dining: 3, travel: 2, streaming: 3, general: 1 },
+    defaultRate: 1,
+    perks: [['3× Dining & Streaming'], ['2× Travel'], ['1× Everything else']],
+  },
+  {
+    id: 'cfu',
+    name: 'Chase Freedom Unlimited',
+    shortName: 'Freedom Unlimited',
+    issuer: 'Chase',
+    type: 'points',
+    emoji: '🔵',
+    cssClass: 'chase',
+    rewards: { dining: 3, drugstore: 3, general: 1.5 },
+    defaultRate: 1.5,
+    perks: [['3× Dining & Drugstores'], ['1.5× Everything else']],
+  },
+  {
+    id: 'cfr',
+    name: 'Chase Freedom Rise',
+    shortName: 'Freedom Rise',
+    issuer: 'Chase',
+    type: 'points',
+    emoji: '🟦',
+    cssClass: 'chase',
+    rewards: { general: 1.5 },
+    defaultRate: 1.5,
+    perks: [['1.5× Everything']],
+  },
+  {
+    id: 'prime',
+    name: 'Prime Visa',
+    shortName: 'Prime Visa',
+    issuer: 'Amazon',
+    type: 'cashback',
+    emoji: '📦',
+    cssClass: 'prime',
+    rewards: { amazon: 5, wholeFoods: 5, gas: 2, dining: 2, drugstore: 2, general: 1 },
+    defaultRate: 1,
+    perks: [['5% Amazon & Whole Foods'], ['2% Gas, Dining, Drugstores'], ['1% Everything else']],
+  },
+];
+
+const MERCHANTS = [
+  { name: "McDonald's", icon: '🍔', cat: 'dining' },
+  { name: "Starbucks", icon: '☕', cat: 'dining' },
+  { name: "Chipotle", icon: '🌯', cat: 'dining' },
+  { name: "Chick-fil-A", icon: '🐔', cat: 'dining' },
+  { name: "Subway", icon: '🥖', cat: 'dining' },
+  { name: "Dunkin'", icon: '🍩', cat: 'dining' },
+  { name: "Pizza Hut", icon: '🍕', cat: 'dining' },
+  { name: "Domino's", icon: '🍕', cat: 'dining' },
+  { name: "Panera Bread", icon: '🥗', cat: 'dining' },
+  { name: "Taco Bell", icon: '🌮', cat: 'dining' },
+  { name: "Wendy's", icon: '🍔', cat: 'dining' },
+  { name: "Olive Garden", icon: '🍝', cat: 'dining' },
+  { name: "Chili's", icon: '🌶️', cat: 'dining' },
+  { name: "IHOP", icon: '🥞', cat: 'dining' },
+  { name: "Denny's", icon: '🍳', cat: 'dining' },
+  { name: "Shake Shack", icon: '🍟', cat: 'dining' },
+  { name: "Five Guys", icon: '🍔', cat: 'dining' },
+  { name: "Wingstop", icon: '🍗', cat: 'dining' },
+  { name: "Panda Express", icon: '🥡', cat: 'dining' },
+  { name: "Sweetgreen", icon: '🥗', cat: 'dining' },
+  { name: "DoorDash", icon: '🛵', cat: 'dining' },
+  { name: "Uber Eats", icon: '🛵', cat: 'dining' },
+  { name: "Grubhub", icon: '🍱', cat: 'dining' },
+  { name: "Delta Air Lines", icon: '✈️', cat: 'travel' },
+  { name: "United Airlines", icon: '✈️', cat: 'travel' },
+  { name: "American Airlines", icon: '✈️', cat: 'travel' },
+  { name: "Southwest Airlines", icon: '✈️', cat: 'travel' },
+  { name: "Marriott", icon: '🏨', cat: 'travel' },
+  { name: "Hilton", icon: '🏨', cat: 'travel' },
+  { name: "Hyatt", icon: '🏨', cat: 'travel' },
+  { name: "Airbnb", icon: '🏠', cat: 'travel' },
+  { name: "Expedia", icon: '🌐', cat: 'travel' },
+  { name: "Hotels.com", icon: '🏨', cat: 'travel' },
+  { name: "VRBO", icon: '🏡', cat: 'travel' },
+  { name: "Uber", icon: '🚕', cat: 'travel' },
+  { name: "Lyft", icon: '🚕', cat: 'travel' },
+  { name: "Amtrak", icon: '🚂', cat: 'travel' },
+  { name: "Enterprise", icon: '🚗', cat: 'travel' },
+  { name: "Hertz", icon: '🚗', cat: 'travel' },
+  { name: "Whole Foods", icon: '🌿', cat: 'wholeFoods' },
+  { name: "Whole Foods Market", icon: '🌿', cat: 'wholeFoods' },
+  { name: "Kroger", icon: '🛒', cat: 'groceries' },
+  { name: "Safeway", icon: '🛒', cat: 'groceries' },
+  { name: "Trader Joe's", icon: '🌺', cat: 'groceries' },
+  { name: "Publix", icon: '🛒', cat: 'groceries' },
+  { name: "Aldi", icon: '🛒', cat: 'groceries' },
+  { name: "Wegmans", icon: '🛒', cat: 'groceries' },
+  { name: "H-E-B", icon: '🛒', cat: 'groceries' },
+  { name: "Costco", icon: '📦', cat: 'groceries' },
+  { name: "Sam's Club", icon: '📦', cat: 'groceries' },
+  { name: "Walmart", icon: '🛒', cat: 'groceries' },
+  { name: "Target", icon: '🎯', cat: 'groceries' },
+  { name: "Amazon", icon: '📦', cat: 'amazon' },
+  { name: "Amazon.com", icon: '📦', cat: 'amazon' },
+  { name: "Amazon Fresh", icon: '🥦', cat: 'amazon' },
+  { name: "Amazon Go", icon: '🏪', cat: 'amazon' },
+  { name: "Shell", icon: '⛽', cat: 'gas' },
+  { name: "BP", icon: '⛽', cat: 'gas' },
+  { name: "Chevron", icon: '⛽', cat: 'gas' },
+  { name: "ExxonMobil", icon: '⛽', cat: 'gas' },
+  { name: "Mobil", icon: '⛽', cat: 'gas' },
+  { name: "Exxon", icon: '⛽', cat: 'gas' },
+  { name: "76", icon: '⛽', cat: 'gas' },
+  { name: "Circle K", icon: '⛽', cat: 'gas' },
+  { name: "QuikTrip", icon: '⛽', cat: 'gas' },
+  { name: "Speedway", icon: '⛽', cat: 'gas' },
+  { name: "Sinclair", icon: '⛽', cat: 'gas' },
+  { name: "Valero", icon: '⛽', cat: 'gas' },
+  { name: "Sunoco", icon: '⛽', cat: 'gas' },
+  { name: "Netflix", icon: '🎬', cat: 'streaming' },
+  { name: "Hulu", icon: '📺', cat: 'streaming' },
+  { name: "Disney+", icon: '✨', cat: 'streaming' },
+  { name: "HBO Max", icon: '📺', cat: 'streaming' },
+  { name: "Max", icon: '📺', cat: 'streaming' },
+  { name: "Peacock", icon: '🦚', cat: 'streaming' },
+  { name: "Paramount+", icon: '⭐', cat: 'streaming' },
+  { name: "Apple TV+", icon: '🍎', cat: 'streaming' },
+  { name: "Spotify", icon: '🎵', cat: 'streaming' },
+  { name: "Apple Music", icon: '🎵', cat: 'streaming' },
+  { name: "YouTube Premium", icon: '▶️', cat: 'streaming' },
+  { name: "Amazon Prime Video", icon: '📦', cat: 'streaming' },
+  { name: "Twitch", icon: '🎮', cat: 'streaming' },
+  { name: "CVS", icon: '💊', cat: 'drugstore' },
+  { name: "Walgreens", icon: '💊', cat: 'drugstore' },
+  { name: "Rite Aid", icon: '💊', cat: 'drugstore' },
+  { name: "CVS Pharmacy", icon: '💊', cat: 'drugstore' },
+  { name: "Apple Store", icon: '🍎', cat: 'general' },
+  { name: "Best Buy", icon: '💻', cat: 'general' },
+  { name: "Home Depot", icon: '🏠', cat: 'general' },
+  { name: "Lowe's", icon: '🔨', cat: 'general' },
+];
+
+const CAT_LABELS = {
+  dining: 'Dining', travel: 'Travel', groceries: 'Groceries',
+  amazon: 'Amazon', wholeFoods: 'Whole Foods / Amazon',
+  gas: 'Gas', streaming: 'Streaming', drugstore: 'Drugstore', general: 'General',
+};
+const CAT_ICONS = {
+  dining: '🍽', travel: '✈️', groceries: '🛒', amazon: '📦',
+  wholeFoods: '🌿', gas: '⛽', streaming: '📺', drugstore: '💊', general: '💳',
+};
+
+let currentCat = null;
+let activeSugIdx = -1;
+
+buildPortfolio();
+renderEmpty();
+
+const input = document.getElementById('merchant-input');
+const sugBox = document.getElementById('suggestions');
+
+input.addEventListener('input', () => {
+  const q = input.value.trim().toLowerCase();
+  activeSugIdx = -1;
+  if (!q) { closeSuggestions(); if (!currentCat) renderEmpty(); return; }
+  const matches = MERCHANTS.filter(m => m.name.toLowerCase().includes(q)).slice(0, 8);
+  if (!matches.length) { closeSuggestions(); return; }
+  sugBox.innerHTML = matches.map((m, i) =>
+    `<div class="sug-item" data-idx="${i}" data-cat="${m.cat}" data-name="${m.name}" data-icon="${m.icon}">
+      <span class="sug-icon">${m.icon}</span>
+      <span class="sug-name">${highlightMatch(m.name, q)}</span>
+      <span class="sug-cat">${CAT_LABELS[m.cat] || m.cat}</span>
+    </div>`
+  ).join('');
+  sugBox.classList.add('open');
+  sugBox.querySelectorAll('.sug-item').forEach(el => {
+    el.addEventListener('mousedown', e => {
+      e.preventDefault();
+      selectMerchant(el.dataset.cat, el.dataset.name, el.dataset.icon);
+    });
+  });
+});
+
+input.addEventListener('keydown', e => {
+  const items = sugBox.querySelectorAll('.sug-item');
+  if (e.key === 'ArrowDown') { e.preventDefault(); activeSugIdx = Math.min(activeSugIdx + 1, items.length - 1); updateActiveSug(items); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); activeSugIdx = Math.max(activeSugIdx - 1, -1); updateActiveSug(items); }
+  else if (e.key === 'Enter') {
+    if (activeSugIdx >= 0 && items[activeSugIdx]) {
+      const el = items[activeSugIdx];
+      selectMerchant(el.dataset.cat, el.dataset.name, el.dataset.icon);
+    } else {
+      const first = MERCHANTS.find(m => m.name.toLowerCase().includes(input.value.trim().toLowerCase()));
+      if (first) selectMerchant(first.cat, first.name, first.icon);
+    }
+  } else if (e.key === 'Escape') { closeSuggestions(); }
+});
+
+document.addEventListener('click', e => { if (!e.target.closest('.search-wrap')) closeSuggestions(); });
+document.getElementById('amount-input').addEventListener('input', () => { if (currentCat) renderRankedList(currentCat); });
+
+document.querySelectorAll('.pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    const cat = pill.dataset.cat;
+    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    input.value = '';
+    currentCat = cat;
+    renderResults(cat, CAT_LABELS[cat], CAT_ICONS[cat]);
+  });
+});
+
+function updateActiveSug(items) { items.forEach((el, i) => el.classList.toggle('active', i === activeSugIdx)); }
+function closeSuggestions() { sugBox.classList.remove('open'); sugBox.innerHTML = ''; activeSugIdx = -1; }
+function highlightMatch(name, q) {
+  const idx = name.toLowerCase().indexOf(q);
+  if (idx === -1) return name;
+  return name.slice(0, idx) + `<strong style="color:var(--text)">${name.slice(idx, idx + q.length)}</strong>` + name.slice(idx + q.length);
+}
+function selectMerchant(cat, name, icon) {
+  currentCat = cat;
+  input.value = name;
+  closeSuggestions();
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  renderResults(cat, name, icon);
+}
+function getRateForCard(card, cat) { return card.rewards[cat] ?? card.defaultRate; }
+function renderEmpty() {
+  document.getElementById('winner-section').classList.remove('visible');
+  document.getElementById('results-section').style.display = 'none';
+  document.getElementById('empty-state').style.display = 'block';
+}
+function renderResults(cat, label, icon) {
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('results-section').style.display = 'block';
+  const sorted = [...CARDS].sort((a, b) => getRateForCard(b, cat) - getRateForCard(a, cat));
+  const winner = sorted[0];
+  document.getElementById('winner-section').classList.add('visible');
+  document.getElementById('winner-label').innerHTML = `Best card for — ${icon} ${label}`;
+  document.getElementById('winner-emoji').textContent = winner.emoji;
+  document.getElementById('winner-name').textContent = winner.name;
+  const rate = getRateForCard(winner, cat);
+  if (winner.type === 'cashback') {
+    document.getElementById('winner-rate-val').textContent = `${rate}%`;
+    document.getElementById('winner-rate-type').textContent = 'cash back';
+    document.getElementById('winner-detail').textContent = `${rate}% cash back on ${label}`;
+  } else {
+    document.getElementById('winner-rate-val').textContent = `${rate}×`;
+    document.getElementById('winner-rate-type').textContent = 'points per $1';
+    document.getElementById('winner-detail').textContent = `${rate}× points on ${label}`;
+  }
+  renderRankedList(cat);
+  updatePortfolioWinner(winner.id);
+}
+function renderRankedList(cat) {
+  const amount = parseFloat(document.getElementById('amount-input').value) || 0;
+  const sorted = [...CARDS].sort((a, b) => getRateForCard(b, cat) - getRateForCard(a, cat));
+  const maxRate = getRateForCard(sorted[0], cat);
+  document.getElementById('ranked-list').innerHTML = sorted.map((card, i) => {
+    const rate = getRateForCard(card, cat);
+    const pct = (rate / maxRate) * 100;
+    const isTop = i === 0;
+    const earnLabel = card.type === 'cashback'
+      ? `$${(amount * rate / 100).toFixed(2)}`
+      : `${Math.round(amount * rate).toLocaleString()} pts`;
+    const rateLabel = card.type === 'cashback' ? `${rate}%` : `${rate}×`;
+    return `<div class="rank-row${isTop ? ' top' : ''}">
+      <div class="rank-num">${i + 1}</div>
+      <div class="rank-info">
+        <div class="rank-name">${card.shortName}</div>
+        <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%"></div></div>
+      </div>
+      <div class="rank-mult">${rateLabel}</div>
+      <div class="rank-earn">${earnLabel}</div>
+    </div>`;
+  }).join('');
+}
+function buildPortfolio() {
+  document.getElementById('portfolio-grid').innerHTML = CARDS.map(card => `
+    <div class="port-card ${card.cssClass}" id="port-${card.id}">
+      <div class="best-badge">Best pick</div>
+      <div class="port-issuer">${card.issuer}</div>
+      <div class="port-name">${card.shortName}</div>
+      <div class="port-perks">${card.perks.map(([label]) => `<div class="port-perk"><span>${label}</span></div>`).join('')}</div>
+    </div>`).join('');
+}
+function updatePortfolioWinner(winnerId) {
+  document.querySelectorAll('.port-card').forEach(el => el.classList.remove('winner'));
+  document.getElementById(`port-${winnerId}`)?.classList.add('winner');
+}
+</script>
+</body>
+</html>
