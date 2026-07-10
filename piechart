@@ -1,0 +1,52 @@
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+from datetime import datetime
+
+# === Your Personal Finance Dashboard ===
+styling = """
+<style>
+h1 { color: #1E88E5; }
+</style>
+"""
+print(styling)  # This won't show styled in Colab, but it's ready for later
+
+print("🚀 MATT'S FINANCE DASHBOARD")
+print("="*60)
+
+# Sample data — we'll replace this with your real data soon
+data = {
+    'Date': pd.date_range(start='2026-07-01', periods=8).tolist(),
+    'Category': ['Groceries', 'Gas', 'Amazon', 'Dining', 'Utilities', 'Transport', 'Shopping', 'Entertainment'],
+    'Amount': [124.50, 65.00, 189.99, 45.75, 89.20, 32.50, 250.00, 28.99],
+    'Card': ['Freedom Unlimited', 'Sapphire Preferred', 'Freedom Rise', 'Freedom Unlimited', 
+             'Sapphire Preferred', 'Freedom Rise', 'Freedom Unlimited', 'Sapphire Preferred'],
+    'Rewards_Earned': [3.74, 1.95, 5.70, 1.37, 2.68, 0.98, 7.50, 0.87]
+}
+
+df = pd.DataFrame(data)
+
+# Key Metrics
+total_spent = df['Amount'].sum()
+total_rewards = df['Rewards_Earned'].sum()
+avg_per_day = total_spent / len(df)
+
+print(f"Total Spent: ${total_spent:,.2f}")
+print(f"Total Rewards: ${total_rewards:,.2f} 🎁")
+print(f"Average Daily Spend: ${avg_per_day:,.2f}\n")
+
+# Charts
+col1, col2 = st.columns(2) if 'st' in globals() else (None, None)  # For future Streamlit
+
+fig1 = px.pie(df, names='Category', values='Amount', title='Spending Breakdown')
+fig1.show()
+
+fig2 = px.bar(df, x='Date', y='Amount', color='Card', title='Daily Spending by Card')
+fig2.show()
+
+fig3 = px.bar(df, x='Card', y='Rewards_Earned', title='Rewards Earned by Card')
+fig3.show()
+
+# Full Table
+print("\nAll Transactions:")
+display(df.sort_values('Date', ascending=False))
